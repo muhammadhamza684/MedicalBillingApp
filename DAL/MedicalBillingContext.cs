@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using MedicalBillingApp.Dto_s;
 using MedicalBillingApp.Models;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace MedicalBillingApp.DAL;
@@ -32,8 +34,11 @@ public partial class MedicalBillingContext : DbContext
 
     public virtual DbSet<UserRole> UserRoles { get; set; }
 
+    // Dto's Db Set
+    public DbSet<UserRegistrationDtos> userDtos { get; set; }    
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
+    #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
         => optionsBuilder.UseSqlServer("Data Source=DESKTOP-RK55DUC\\HAMZA;Initial Catalog=HealthPay360hamza;Integrated Security=True;Trust Server Certificate=True");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -120,6 +125,8 @@ public partial class MedicalBillingContext : DbContext
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK_UserRoles_User");
         });
+        // Dto's
+        modelBuilder.Entity<UserRegistrationDtos>().HasNoKey();
 
         OnModelCreatingPartial(modelBuilder);
     }

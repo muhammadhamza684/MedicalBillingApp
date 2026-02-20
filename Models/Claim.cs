@@ -12,7 +12,7 @@ public partial class Claim
     [Key]
     public int ClaimId { get; set; }
 
-    public int AppointmentId { get; set; }
+    public int? AppointmentId { get; set; }
 
     [StringLength(50)]
     public string ClaimNumber { get; set; } = null!;
