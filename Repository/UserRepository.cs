@@ -14,6 +14,9 @@ namespace MedicalBillingApp.Repository
         Task<bool> loginUser(UserLoginDto userDto);
 
         Task<ClaimCompositionDto> InsertClaims(ClaimCompositionDto claimCompositionDto);
+
+        Task<bool> UpdateClaim(ClaimCompositionDto claimCompositionDto);
+
     }
     public class UserRepository : IUserRepository
     {
@@ -95,6 +98,51 @@ namespace MedicalBillingApp.Repository
             await _context.SaveChangesAsync();
 
             return dto;
+        }
+
+        public async Task<bool> UpdateClaim(ClaimCompositionDto claimCompositionDto)
+        {
+            // 1️⃣ Patient update
+            var patientDto = claimCompositionDto.patientDtos.First();
+
+            var patient = await _context.Patients
+                .FirstOrDefaultAsync(x => x.PatientId == patientDto.PatientId);
+
+            if (patient == null)
+                throw new Exception("Patient not found");
+
+            // Update fields
+            patient.FirstName = patientDto.FirstName;
+            patient.LastName = patientDto.LastName;
+            patient.Phone = patientDto.Phone;
+            patient.Gender = patientDto.Gender;
+            patient.DateOfBirth = patientDto.DateOfBirth;
+
+            // Mark patient as modified
+            _context.Entry(patient).State = EntityState.Modified;
+
+            // 2️⃣ Claims update
+            foreach (var claimDto in claimCompositionDto.cliamDtos)
+            {
+                var claim = await _context.Claims
+                    .FirstOrDefaultAsync(c => c.ClaimId == claimDto.ClaimId);
+
+                if (claim != null)
+                {
+                    claim.ClaimNumber = claimDto.ClaimNumber;
+                    claim.ClaimStatus = claimDto.ClaimStatus;
+                    claim.TotalAmount = claimDto.TotalAmount;
+                    claim.CreatedDate = claimDto.CreatedDate;
+
+                    // Mark claim as modified
+                    _context.Entry(claim).State = EntityState.Modified;
+                }
+            }
+
+            // 3️⃣ Save all changes
+            await _context.SaveChangesAsync();
+
+            return true;
         }
     }
 }

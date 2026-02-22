@@ -10,8 +10,10 @@ namespace MedicalBillingApp.Services
         Task<bool> loginUser(UserLoginDto userDto);
 
         Task<ClaimCompositionDto> InsertClaims(ClaimCompositionDto claimCompositionDto);
+
+        Task<bool> UpdateClaim(ClaimCompositionDto claimCompositionDto);
     }
-   
+
     public class UserService : IUserService
     {
         private readonly IUserRepository _userRepository;
@@ -37,6 +39,12 @@ namespace MedicalBillingApp.Services
             var result = await _userRepository.InsertClaims(claimCompositionDto);
             return result;
                 
+        }
+
+        public async Task<bool> UpdateClaim(ClaimCompositionDto claimCompositionDto)
+        {
+            var result = await _userRepository.UpdateClaim(claimCompositionDto);
+            return result;
         }
     }
 }
