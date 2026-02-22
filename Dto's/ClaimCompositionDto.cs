@@ -4,7 +4,7 @@
     {
 
         public List<PatientDto> patientDtos { get; set; }
-        public List<CliamDto> cliamDtos { get; set; }
+        public List<ClaimDto> cliamDtos { get; set; }
         
         
     }

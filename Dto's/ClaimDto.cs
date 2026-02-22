@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace MedicalBillingApp.Dto_s
 {
-    public class CliamDto
+    public class ClaimDto
     {
         public int ClaimId { get; set; }
 
@@ -20,5 +20,7 @@ namespace MedicalBillingApp.Dto_s
         public DateTime? CreatedDate { get; set; }
 
         public int PatientId { get; set; }
+
+        public int AppointmentId { get; set; }
     }
 }

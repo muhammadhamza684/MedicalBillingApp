@@ -23,7 +23,7 @@ namespace MedicalBillingApp.HelperMethod
 
         public string HashPassword(User user, string password)
         {
-            return _passwordHasher.HashPassword(user, password); // plain password ko hash karta hai
+            return _passwordHasher.HashPassword(user, password); 
         }
 
         public bool VerifyPassword(User user, string hashedPassword, string password)
