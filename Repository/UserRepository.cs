@@ -4,6 +4,7 @@ using MedicalBillingApp.HelperMethod;
 using MedicalBillingApp.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Cryptography.Xml;
 
 namespace MedicalBillingApp.Repository
 {
@@ -14,6 +15,11 @@ namespace MedicalBillingApp.Repository
         Task<bool> loginUser(UserLoginDto userDto);
 
         Task<ClaimCompositionDto> InsertClaims(ClaimCompositionDto claimCompositionDto);
+
+        Task<bool> UpdateClaim(ClaimCompositionDto claimCompositionDto);
+
+        Task<PatientClaimAndAppionmentDto> CreateClaimAndAppionment(PatientClaimAndAppionmentDto patientClaimAndAppionmentDto);
+
     }
     public class UserRepository : IUserRepository
     {
@@ -95,6 +101,148 @@ namespace MedicalBillingApp.Repository
             await _context.SaveChangesAsync();
 
             return dto;
+        }
+
+        public async Task<bool> UpdateClaim(ClaimCompositionDto claimCompositionDto)
+        {
+            // 1️⃣ Patient update
+            var patientDto = claimCompositionDto.patientDtos.First();
+
+            var patient = await _context.Patients
+                .FirstOrDefaultAsync(x => x.PatientId == patientDto.PatientId);
+
+            if (patient == null)
+                throw new Exception("Patient not found");
+
+            // Update fields
+            patient.FirstName = patientDto.FirstName;
+            patient.LastName = patientDto.LastName;
+            patient.Phone = patientDto.Phone;
+            patient.Gender = patientDto.Gender;
+            patient.DateOfBirth = patientDto.DateOfBirth;
+
+            // Mark patient as modified
+            _context.Entry(patient).State = EntityState.Modified;
+
+            // 2️⃣ Claims update
+            foreach (var claimDto in claimCompositionDto.cliamDtos)
+            {
+                var claim = await _context.Claims
+                    .FirstOrDefaultAsync(c => c.ClaimId == claimDto.ClaimId);
+
+                if (claim != null)
+                {
+                    claim.ClaimNumber = claimDto.ClaimNumber;
+                    claim.ClaimStatus = claimDto.ClaimStatus;
+                    claim.TotalAmount = claimDto.TotalAmount;
+                    claim.CreatedDate = claimDto.CreatedDate;
+
+                    // Mark claim as modified
+                    _context.Entry(claim).State = EntityState.Modified;
+                }
+            }
+
+            // 3️⃣ Save all changes
+            await _context.SaveChangesAsync();
+
+            return true;
+        }
+
+        public async Task<PatientClaimAndAppionmentDto> CreateClaimAndAppionment(
+     PatientClaimAndAppionmentDto dto)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+
+            try
+            {
+                // ======================
+                // 1️⃣ PATIENT
+                // ======================
+                var patientDto = dto.PatientDtos.First();
+
+                var patient = new Patient
+                {
+                    FirstName = patientDto.FirstName,
+                    LastName = patientDto.LastName,
+                    Gender = patientDto.Gender,
+                    Phone = patientDto.Phone,
+                    CreatedDate = DateTime.Now
+                };
+
+                _context.Patients.Add(patient);
+                await _context.SaveChangesAsync();
+
+
+                // ======================
+                // 2️⃣ DOCTOR
+                // ======================
+                var doctorDto = dto.DoctorDtos.First();
+
+                var doctor = await _context.Doctors
+                    .FirstOrDefaultAsync(x => x.DoctorId == doctorDto.DoctorId);
+
+                if (doctor == null)
+                {
+                    doctor = new Doctor
+                    {
+                        DoctorName = doctorDto.DoctorName,
+                        Specialty = doctorDto.Specialty,
+                        CreatedDate = DateTime.Now
+                    };
+
+                    _context.Doctors.Add(doctor);
+                    await _context.SaveChangesAsync();
+                }
+
+
+                // ======================
+                // 3️⃣ APPOINTMENT
+                // ======================
+                var appointmentDto = dto.appointments.First();
+
+                var appointment = new Appointment
+                {
+                    PatientId = patient.PatientId,
+                    DoctorId = doctor.DoctorId,
+                    VisitDate = appointmentDto.VisitDate == default
+                                    ? DateTime.Now
+                                    : appointmentDto.VisitDate,
+                    Status = appointmentDto.Status
+                };
+
+                _context.Appointments.Add(appointment);
+                await _context.SaveChangesAsync();
+
+
+                // ======================
+                // 4️⃣ CLAIMS (MULTIPLE)
+                // ======================
+                var claims = dto.claims.Select(x => new Claim
+                {
+                    ClaimNumber = Guid.NewGuid().ToString(), // ✅ UNIQUE
+                    ClaimStatus = x.ClaimStatus,
+                    TotalAmount = x.TotalAmount,
+                    CreatedDate = DateTime.Now,
+                    PatientId = patient.PatientId,
+                    AppointmentId = appointment.AppointmentId
+                }).ToList();
+
+                _context.Claims.AddRange(claims);
+                await _context.SaveChangesAsync();
+
+
+                // ======================
+                // ✅ COMMIT
+                // ======================
+                await transaction.CommitAsync();
+
+                return dto;
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
     }
 }

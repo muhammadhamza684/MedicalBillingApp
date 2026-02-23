@@ -39,6 +39,19 @@ namespace MedicalBillingApp.Controllers
             return Ok(Result);  
         }
 
+        [HttpPut]
+        public async Task<IActionResult> UpdateClaim(ClaimCompositionDto claimCompositionDto)
+        {
+            var result = await _userService.UpdateClaim(claimCompositionDto);
+            return Ok(result);
+        }
+
+        [HttpPost]
+         public async Task<IActionResult> BookAppionmentWithClaim([FromBody]PatientClaimAndAppionmentDto patientClaimAndAppionmentDto)
+        {
+            var result = await _userService.CreateClaimAndAppionment(patientClaimAndAppionmentDto);
+            return Ok(result);
+        }
 
     }
 }
