@@ -1,4 +1,5 @@
 ﻿using MedicalBillingApp.Dto_s;
+using MedicalBillingApp.HelperMethod;
 using MedicalBillingApp.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -49,8 +50,22 @@ namespace MedicalBillingApp.Controllers
         [HttpPost]
          public async Task<IActionResult> BookAppionmentWithClaim([FromBody]PatientClaimAndAppionmentDto patientClaimAndAppionmentDto)
         {
-            var result = await _userService.CreateClaimAndAppionment(patientClaimAndAppionmentDto);
-            return Ok(result);
+            try
+            {
+                var result = await _userService.CreateClaimAndAppionment(patientClaimAndAppionmentDto);
+                return Ok(new ApiResponce<PatientClaimAndAppionmentDto>(result));
+            }
+           
+             catch (Exception ex)
+            {
+
+               return Ok(new ApiResponce<PatientClaimAndAppionmentDto>(
+            data: null,
+            isSuccess: false,
+            errorMessage: ex.InnerException?.Message ?? ex.Message
+            ));
+
+            }
         }
 
     }

@@ -1,4 +1,5 @@
 ﻿using MedicalBillingApp.Dto_s;
+using MedicalBillingApp.HelperMethod;
 using MedicalBillingApp.Repository;
 
 namespace MedicalBillingApp.Services

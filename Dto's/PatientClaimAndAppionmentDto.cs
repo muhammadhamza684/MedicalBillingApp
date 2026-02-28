@@ -8,6 +8,7 @@ namespace MedicalBillingApp.Dto_s
 
         public List<ClaimDto> claims { get; set; }
 
+        public List<ClaimLogDto> claimLogDtos { get; set; }
         public List<DoctorDto> DoctorDtos { get; set; }
 
         public List<AppionmentDto> appointments { get; set; }

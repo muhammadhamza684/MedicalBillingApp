@@ -4,7 +4,9 @@ using MedicalBillingApp.HelperMethod;
 using MedicalBillingApp.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 using System.Security.Cryptography.Xml;
+using Claim = MedicalBillingApp.Models.Claim;
 
 namespace MedicalBillingApp.Repository
 {
@@ -87,7 +89,7 @@ namespace MedicalBillingApp.Repository
             await _context.SaveChangesAsync();   // 👈 PatientId generate hoga
 
             // 2️⃣ Insert Claims (multiple possible)
-            var claims = dto.cliamDtos.Select(x => new Claim
+            var claims = dto.cliamDtos.Select(x => new Models.Claim
             {
                 PatientId = patient.PatientId,   // 🔑 FK
                // UserId = patient.UserId,          // 🔑 FK
@@ -136,8 +138,6 @@ namespace MedicalBillingApp.Repository
                     claim.ClaimStatus = claimDto.ClaimStatus;
                     claim.TotalAmount = claimDto.TotalAmount;
                     claim.CreatedDate = claimDto.CreatedDate;
-
-
                     _context.Entry(claim).State = EntityState.Modified;
                 }
             }
@@ -154,7 +154,6 @@ namespace MedicalBillingApp.Repository
 
             try
             {
-              
                 var patientDto = dto.PatientDtos.First();
 
                 var patient = new Patient
@@ -168,7 +167,6 @@ namespace MedicalBillingApp.Repository
 
                 _context.Patients.Add(patient);
                 await _context.SaveChangesAsync();
-
 
                 var doctorDto = dto.DoctorDtos.First();
 
@@ -203,11 +201,10 @@ namespace MedicalBillingApp.Repository
                 _context.Appointments.Add(appointment);
                 await _context.SaveChangesAsync();
 
-
-             
                 var claims = dto.claims.Select(x => new Claim
                 {
-                    ClaimNumber = Guid.NewGuid().ToString().Substring(0,5), // ✅ UNIQUE
+                    // ClaimId will be auto-generated, remove any manual assignment
+                    ClaimNumber = Guid.NewGuid().ToString().Substring(0, 5), // ✅ UNIQUE
                     ClaimStatus = x.ClaimStatus,
                     TotalAmount = x.TotalAmount,
                     CreatedDate = DateTime.Now,
@@ -218,8 +215,45 @@ namespace MedicalBillingApp.Repository
                 _context.Claims.AddRange(claims);
                 await _context.SaveChangesAsync();
 
+                // Using foreach to create claim logs
+                var claimLogs = new List<ClaimLog>();
+                int index = 0;
+                foreach (var logDto in dto.claimLogDtos)
+                {
+                    var relatedClaim = claims[index]; // Link log to the corresponding claim
+                    claimLogs.Add(new ClaimLog
+                    {
+                        ClaimId = relatedClaim.ClaimId,
+                        LogMessage = logDto.LogMessage,
+                        OldStatus = logDto.OldStatus,
+                        NewStatus = logDto.NewStatus,
+                        LoggedDate = DateTime.Now
+                    });
+                    index++;
+                }
+
+                _context.ClaimLogs.AddRange(claimLogs);
+                await _context.SaveChangesAsync();
 
                 await transaction.CommitAsync();
+
+                // Update DTO with generated IDs
+                dto.PatientDtos.First().PatientId = patient.PatientId;
+                dto.DoctorDtos.First().DoctorId = doctor.DoctorId;
+                dto.appointments.First().AppointmentId = appointment.AppointmentId;
+                dto.appointments.First().PatientId = patient.PatientId;
+                dto.appointments.First().DoctorId = doctor.DoctorId;
+
+                index = 0;
+                foreach (var claim in claims)
+                {
+                    var dtoClaim = dto.claims[index];
+                    dtoClaim.ClaimId = claim.ClaimId;
+                    dtoClaim.PatientId = patient.PatientId;
+                    dtoClaim.AppointmentId = appointment.AppointmentId;
+                    dtoClaim.ClaimNumber = claim.ClaimNumber;
+                    index++;
+                }
 
                 return dto;
             }
