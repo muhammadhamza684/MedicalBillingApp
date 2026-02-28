@@ -114,17 +114,17 @@ namespace MedicalBillingApp.Repository
             if (patient == null)
                 throw new Exception("Patient not found");
 
-            // Update fields
+       
             patient.FirstName = patientDto.FirstName;
             patient.LastName = patientDto.LastName;
             patient.Phone = patientDto.Phone;
             patient.Gender = patientDto.Gender;
             patient.DateOfBirth = patientDto.DateOfBirth;
 
-            // Mark patient as modified
+           
             _context.Entry(patient).State = EntityState.Modified;
 
-            // 2️⃣ Claims update
+
             foreach (var claimDto in claimCompositionDto.cliamDtos)
             {
                 var claim = await _context.Claims
@@ -137,12 +137,11 @@ namespace MedicalBillingApp.Repository
                     claim.TotalAmount = claimDto.TotalAmount;
                     claim.CreatedDate = claimDto.CreatedDate;
 
-                    // Mark claim as modified
+
                     _context.Entry(claim).State = EntityState.Modified;
                 }
             }
 
-            // 3️⃣ Save all changes
             await _context.SaveChangesAsync();
 
             return true;
@@ -155,9 +154,7 @@ namespace MedicalBillingApp.Repository
 
             try
             {
-                // ======================
-                // 1️⃣ PATIENT
-                // ======================
+              
                 var patientDto = dto.PatientDtos.First();
 
                 var patient = new Patient
@@ -173,9 +170,6 @@ namespace MedicalBillingApp.Repository
                 await _context.SaveChangesAsync();
 
 
-                // ======================
-                // 2️⃣ DOCTOR
-                // ======================
                 var doctorDto = dto.DoctorDtos.First();
 
                 var doctor = await _context.Doctors
@@ -194,10 +188,6 @@ namespace MedicalBillingApp.Repository
                     await _context.SaveChangesAsync();
                 }
 
-
-                // ======================
-                // 3️⃣ APPOINTMENT
-                // ======================
                 var appointmentDto = dto.appointments.First();
 
                 var appointment = new Appointment
@@ -214,12 +204,10 @@ namespace MedicalBillingApp.Repository
                 await _context.SaveChangesAsync();
 
 
-                // ======================
-                // 4️⃣ CLAIMS (MULTIPLE)
-                // ======================
+             
                 var claims = dto.claims.Select(x => new Claim
                 {
-                    ClaimNumber = Guid.NewGuid().ToString(), // ✅ UNIQUE
+                    ClaimNumber = Guid.NewGuid().ToString().Substring(0,5), // ✅ UNIQUE
                     ClaimStatus = x.ClaimStatus,
                     TotalAmount = x.TotalAmount,
                     CreatedDate = DateTime.Now,
@@ -231,9 +219,6 @@ namespace MedicalBillingApp.Repository
                 await _context.SaveChangesAsync();
 
 
-                // ======================
-                // ✅ COMMIT
-                // ======================
                 await transaction.CommitAsync();
 
                 return dto;
