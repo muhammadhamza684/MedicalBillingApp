@@ -22,6 +22,9 @@ namespace MedicalBillingApp.Repository
 
         Task<PatientClaimAndAppionmentDto> CreateClaimAndAppionment(PatientClaimAndAppionmentDto patientClaimAndAppionmentDto);
 
+        Task<UpdateClaimDto> UpdateClaims(UpdateClaimDto dto, int claimId);
+
+
     }
     public class UserRepository : IUserRepository
     {
@@ -263,5 +266,50 @@ namespace MedicalBillingApp.Repository
                 throw;
             }
         }
+
+        public async Task<UpdateClaimDto> UpdateClaims(UpdateClaimDto dto, int claimId)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+
+            try
+            {
+                var claim = await _context.Claims
+                    .FirstOrDefaultAsync(x => x.ClaimId == claimId);
+
+                if (claim == null)
+                    throw new Exception("Claim not found");
+
+                var dtoClaim = dto.claims.FirstOrDefault();
+
+                var oldStatus = claim.ClaimStatus;
+
+                claim.ClaimStatus = dtoClaim.ClaimStatus;
+
+                var dtoLog = dto.claimLogDtos.FirstOrDefault();
+
+                var claimLog = new ClaimLog
+                {
+                    ClaimId = claim.ClaimId,
+                    LogMessage = dtoLog.LogMessage,
+                    OldStatus = oldStatus,
+                    NewStatus = dtoClaim.ClaimStatus,
+                    LoggedDate = DateTime.Now
+                };
+
+                _context.ClaimLogs.Add(claimLog);
+
+                await _context.SaveChangesAsync();
+
+                await transaction.CommitAsync();
+
+                return dto;
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+        }
     }
 }
+

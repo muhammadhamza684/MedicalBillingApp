@@ -15,6 +15,8 @@ namespace MedicalBillingApp.Services
         Task<bool> UpdateClaim(ClaimCompositionDto claimCompositionDto);
 
         Task<ApiResponce<PatientClaimAndAppionmentDto>> CreateClaimAndAppionment(PatientClaimAndAppionmentDto patientClaimAndAppionmentDto);
+
+        Task<ApiResponce<UpdateClaimDto>> UpdateClaims(UpdateClaimDto dto, int claimId);
     }
 
     public class UserService : IUserService
@@ -61,6 +63,20 @@ namespace MedicalBillingApp.Services
             catch (Exception ex)
             {
                 return new ApiResponce<PatientClaimAndAppionmentDto>(false, ex.Message, null);
+            }
+        }
+
+        public async Task<ApiResponce<UpdateClaimDto>> UpdateClaims(UpdateClaimDto dto, int claimId)
+        {
+            try
+            {
+                var result = await _userRepository.UpdateClaims(dto, claimId);
+                return ApiResponce<UpdateClaimDto>.Success(result);
+            }
+            catch (Exception ex)
+            {
+
+                return new ApiResponce<UpdateClaimDto>(false, ex.Message, null);
             }
         }
     }
