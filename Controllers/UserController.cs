@@ -50,22 +50,10 @@ namespace MedicalBillingApp.Controllers
         [HttpPost]
          public async Task<IActionResult> BookAppionmentWithClaim([FromBody]PatientClaimAndAppionmentDto patientClaimAndAppionmentDto)
         {
-            try
-            {
-                var result = await _userService.CreateClaimAndAppionment(patientClaimAndAppionmentDto);
-                return Ok(new ApiResponce<PatientClaimAndAppionmentDto>(result));
-            }
            
-             catch (Exception ex)
-            {
-
-               return Ok(new ApiResponce<PatientClaimAndAppionmentDto>(
-            data: null,
-            isSuccess: false,
-            errorMessage: ex.InnerException?.Message ?? ex.Message
-            ));
-
-            }
+                var result = await _userService.CreateClaimAndAppionment(patientClaimAndAppionmentDto);
+                return Ok(result);
+                       
         }
 
     }

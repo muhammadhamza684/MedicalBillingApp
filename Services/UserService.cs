@@ -14,7 +14,7 @@ namespace MedicalBillingApp.Services
 
         Task<bool> UpdateClaim(ClaimCompositionDto claimCompositionDto);
 
-        Task<PatientClaimAndAppionmentDto> CreateClaimAndAppionment(PatientClaimAndAppionmentDto patientClaimAndAppionmentDto);
+        Task<ApiResponce<PatientClaimAndAppionmentDto>> CreateClaimAndAppionment(PatientClaimAndAppionmentDto patientClaimAndAppionmentDto);
     }
 
     public class UserService : IUserService
@@ -50,10 +50,18 @@ namespace MedicalBillingApp.Services
             return result;
         }
 
-        public async Task<PatientClaimAndAppionmentDto> CreateClaimAndAppionment(PatientClaimAndAppionmentDto patientClaimAndAppionmentDto)
+        public async Task<ApiResponce<PatientClaimAndAppionmentDto>> CreateClaimAndAppionment(PatientClaimAndAppionmentDto patientClaimAndAppionmentDto)
         {
-            var result = await _userRepository.CreateClaimAndAppionment(patientClaimAndAppionmentDto);
-            return result;  
+            try
+            {
+                var result = await _userRepository.CreateClaimAndAppionment(patientClaimAndAppionmentDto);
+
+                return ApiResponce<PatientClaimAndAppionmentDto>.Success(result, "Claim and Appointment Created Successfully");
+            }
+            catch (Exception ex)
+            {
+                return new ApiResponce<PatientClaimAndAppionmentDto>(false, ex.Message, null);
+            }
         }
     }
 }
