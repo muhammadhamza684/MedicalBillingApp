@@ -1,5 +1,7 @@
-﻿using MedicalBillingApp.Dto_s;
+﻿using MedicalBillingApp.AuthService;
+using MedicalBillingApp.Dto_s;
 using MedicalBillingApp.HelperMethod;
+using MedicalBillingApp.Models;
 using MedicalBillingApp.Repository;
 
 namespace MedicalBillingApp.Services
@@ -8,7 +10,7 @@ namespace MedicalBillingApp.Services
     {
         Task<UserRegistrationDtos> userRegistration(UserRegistrationDtos userDtoS);
 
-        Task<bool> loginUser(UserLoginDto userDto);
+        Task<string>? loginUser(UserLoginDto userDto);
 
         Task<ClaimCompositionDto> InsertClaims(ClaimCompositionDto claimCompositionDto);
 
@@ -21,10 +23,12 @@ namespace MedicalBillingApp.Services
 
     public class UserService : IUserService
     {
+        private readonly IAuthService _authService;
         private readonly IUserRepository _userRepository;
-        public UserService(IUserRepository userRepository)
+        public UserService(IUserRepository userRepository, IAuthService authService )
         {
             _userRepository = userRepository;
+            _authService = authService;
         }
 
         public async Task<UserRegistrationDtos> userRegistration(UserRegistrationDtos userDtoS)
@@ -33,11 +37,19 @@ namespace MedicalBillingApp.Services
             return result;
         }
 
-        public async Task<bool> loginUser(UserLoginDto userDto)
-        {
-            var result = await _userRepository.loginUser(userDto);
-            return result;
-        }
+        //public async Task<User> LoginUser(UserLoginDto userDto)
+        //{
+        //    // 1️⃣ Repository se user get karo
+        //    var user = await _userRepository.loginUser(userDto);
+
+        //    if (user == null)
+        //        return null;  // ya throw exception
+
+        //    // 2️⃣ JWT generate karo
+        //    var token = _authService.GenerateJwtToken(user);
+
+        //    return token;
+        //}
 
         public async Task<ClaimCompositionDto> InsertClaims(ClaimCompositionDto claimCompositionDto)
         {
@@ -49,7 +61,7 @@ namespace MedicalBillingApp.Services
         public async Task<bool> UpdateClaim(ClaimCompositionDto claimCompositionDto)
         {
             var result = await _userRepository.UpdateClaim(claimCompositionDto);
-            return result;
+            return true;
         }
 
         public async Task<ApiResponce<PatientClaimAndAppionmentDto>> CreateClaimAndAppionment(PatientClaimAndAppionmentDto patientClaimAndAppionmentDto)
@@ -58,7 +70,7 @@ namespace MedicalBillingApp.Services
             {
                 var result = await _userRepository.CreateClaimAndAppionment(patientClaimAndAppionmentDto);
 
-                return ApiResponce<PatientClaimAndAppionmentDto>.Success(result, "Claim and Appointment Created Successfully");
+                return ApiResponce<PatientClaimAndAppionmentDto>.Success(result, default);
             }
             catch (Exception ex)
             {
@@ -78,6 +90,20 @@ namespace MedicalBillingApp.Services
 
                 return new ApiResponce<UpdateClaimDto>(false, ex.Message, null);
             }
+        }
+
+        public async Task<string>? loginUser(UserLoginDto userDto)
+        {
+           
+            var user = await _userRepository.loginUser(userDto);
+
+            if (user == null)
+                return null;  
+
+            
+            var token = _authService.GenerateJwtToken(user);
+
+            return token;
         }
     }
 }

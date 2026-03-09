@@ -3,6 +3,7 @@ using MedicalBillingApp.Dto_s;
 using MedicalBillingApp.HelperMethod;
 using MedicalBillingApp.Models;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using System.Security.Cryptography.Xml;
@@ -14,11 +15,11 @@ namespace MedicalBillingApp.Repository
     {
         Task<UserRegistrationDtos> UserRegistration(UserRegistrationDtos userDto);
 
-        Task<bool> loginUser(UserLoginDto userDto);
+        Task<User> loginUser(UserLoginDto userDto);
 
         Task<ClaimCompositionDto> InsertClaims(ClaimCompositionDto claimCompositionDto);
 
-        Task<bool> UpdateClaim(ClaimCompositionDto claimCompositionDto);
+        Task<string> UpdateClaim(ClaimCompositionDto claimCompositionDto);
 
         Task<PatientClaimAndAppionmentDto> CreateClaimAndAppionment(PatientClaimAndAppionmentDto patientClaimAndAppionmentDto);
 
@@ -43,34 +44,39 @@ namespace MedicalBillingApp.Repository
             var user = new User();
             user.Username = userDtoS.Username;
             user.Email = userDtoS.Email;
+            user.PasswordHash = userDtoS.PasswordHash;
 
             // Hash the password
-            user.PasswordHash = _passwordHelper.HashPassword(user, userDtoS.PasswordHash);
+           // user.PasswordHash = _passwordHelper.HashPassword(user, userDtoS.PasswordHash);
 
             // Save to DB
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
 
             // Clear password before returning
-            userDtoS.PasswordHash = null;
+           // userDtoS.PasswordHash = null;
             return userDtoS;
         }
 
-        public async Task<bool> loginUser(UserLoginDto userDto)
-        {
-            // 1️⃣ Find user by email first
-            var userResult = await _context.Users
-                .FirstOrDefaultAsync(x => x.Email == userDto.Email);
+        //public async Task<UserLoginDto> LoginUser(UserLoginDto userDto)
+        //{
+        //    // 1️⃣ Find user by email
+        //    var userResult = await _context.Users
+        //        .FirstOrDefaultAsync(x => x.Email == userDto.Email);
 
-            // 2️⃣ Agar user nahi mila to false return karo
-            if (userResult == null)
-                return false;
+        //    // 2️⃣ Agar user nahi mila to null return karo
+        //    if (userResult == null)
+        //        return null;
 
-            // 3️⃣ Password verify karo using PasswordHelper
-            bool isPasswordValid = _passwordHelper.VerifyPassword(userResult, userResult.PasswordHash, userDto.Password);
+        //    // 3️⃣ Password verify karo
+        //    bool isPasswordValid = _passwordHelper.VerifyPassword(userResult, userResult.PasswordHash, userDto.Password);
 
-            return isPasswordValid;
-        }
+        //    if (!isPasswordValid)
+        //        return null;
+
+        //    // ✅ User valid hai to user object return karo
+        //    return userResult;
+        //}
 
         public async Task<ClaimCompositionDto> InsertClaims(ClaimCompositionDto dto)
         {
@@ -309,6 +315,33 @@ namespace MedicalBillingApp.Repository
                 await transaction.RollbackAsync();
                 throw;
             }
+        }
+
+        //public async Task<User> LoginUser(UserLoginDto userDto)
+        //{
+            
+        //}
+
+        Task<string> IUserRepository.UpdateClaim(ClaimCompositionDto claimCompositionDto)
+        {
+            throw new NotImplementedException();
+        }
+
+        public async Task<User> loginUser(UserLoginDto userDto)
+        {
+            var userResult = await _context.Users
+                 .FirstOrDefaultAsync(x => x.Email == userDto.Email);
+
+            if (userResult == null)
+                return null;
+
+           // bool isPasswordValid = _passwordHelper.VerifyPassword(userResult, userResult.PasswordHash, userDto.Password);
+
+            //if (!isPasswordValid)
+            //    return null;
+
+
+            return userResult;
         }
     }
 }

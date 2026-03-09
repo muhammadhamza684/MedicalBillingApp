@@ -1,8 +1,6 @@
 ﻿using MedicalBillingApp.DAL;
 using MedicalBillingApp.Models;
 using Microsoft.AspNetCore.Identity;
-using System.Security.Cryptography;
-using System.Text;
 
 namespace MedicalBillingApp.HelperMethod
 {
@@ -18,22 +16,33 @@ namespace MedicalBillingApp.HelperMethod
 
         public PasswordHelper(IPasswordHasher<User> passwordHasher)
         {
-            _passwordHasher = passwordHasher;
+            _passwordHasher = passwordHasher ?? throw new ArgumentNullException(nameof(passwordHasher));
         }
 
         public string HashPassword(User user, string password)
         {
-            return _passwordHasher.HashPassword(user, password); 
+            if (user == null) throw new ArgumentNullException(nameof(user));
+            if (string.IsNullOrWhiteSpace(password)) throw new ArgumentException("Password cannot be empty", nameof(password));
+
+            return _passwordHasher.HashPassword(user, password);
         }
 
         public bool VerifyPassword(User user, string hashedPassword, string password)
         {
-            var result = _passwordHasher.VerifyHashedPassword(user, hashedPassword, password);
-            return result == PasswordVerificationResult.Success;
+            if (user == null) throw new ArgumentNullException(nameof(user));
+            if (string.IsNullOrEmpty(hashedPassword)) return false; // Prevents FormatException
+            if (string.IsNullOrWhiteSpace(password)) return false;
+
+            try
+            {
+                var result = _passwordHasher.VerifyHashedPassword(user, hashedPassword, password);
+                return result == PasswordVerificationResult.Success;
+            }
+            catch
+            {
+                // Agar hashedPassword invalid format hai, safe return false
+                return false;
+            }
         }
     }
-
-
-
 }
-

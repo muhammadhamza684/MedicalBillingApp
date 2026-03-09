@@ -23,13 +23,15 @@ namespace MedicalBillingApp.Controllers
             var result = await _userService.userRegistration(userDto);
             return Ok(result);  
         }
-
-        [HttpPost]
-
-        public async Task<IActionResult> userLogin(UserLoginDto userLoginDto)
+        [HttpPost("login")]
+        public async Task<IActionResult> UserLogin(UserLoginDto userLoginDto)
         {
-            var result = await _userService.loginUser(userLoginDto);
-            return Ok($"user login Successfulll"+ result);
+            var token = await _userService.loginUser(userLoginDto);
+
+            if (token == null)
+                return Unauthorized("Invalid email or password");
+
+            return Ok(new { message = "User login successful", token });
         }
 
         [HttpPost]

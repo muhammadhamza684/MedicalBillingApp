@@ -17,7 +17,7 @@ public partial class User
     public string Username { get; set; } = null!;
 
     [StringLength(500)]
-    public string PasswordHash { get; set; } = null!;
+    public string PasswordHash { get; set; } = string.Empty;
 
     [StringLength(150)]
     public string? Email { get; set; }
@@ -26,6 +26,10 @@ public partial class User
 
     [Column(TypeName = "datetime")]
     public DateTime? CreatedDate { get; set; }
+    public int? RoleId { get; set; }  
+
+ 
+    public Role Role { get; set; }
 
     [InverseProperty("User")]
     public virtual ICollection<Doctor> Doctors { get; set; } = new List<Doctor>();
