@@ -1,4 +1,5 @@
 ﻿using MedicalBillingApp.Dto_s;
+using MedicalBillingApp.HelperMethod;
 using MedicalBillingApp.Services;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -22,13 +23,15 @@ namespace MedicalBillingApp.Controllers
             var result = await _userService.userRegistration(userDto);
             return Ok(result);  
         }
-
-        [HttpPost]
-
-        public async Task<IActionResult> userLogin(UserLoginDto userLoginDto)
+        [HttpPost("login")]
+        public async Task<IActionResult> UserLogin(UserLoginDto userLoginDto)
         {
-            var result = await _userService.loginUser(userLoginDto);
-            return Ok($"user login Successfulll"+ result);
+            var token = await _userService.loginUser(userLoginDto);
+
+            if (token == null)
+                return Unauthorized("Invalid email or password");
+
+            return Ok(new { message = "User login successful", token });
         }
 
         [HttpPost]
@@ -49,9 +52,26 @@ namespace MedicalBillingApp.Controllers
         [HttpPost]
          public async Task<IActionResult> BookAppionmentWithClaim([FromBody]PatientClaimAndAppionmentDto patientClaimAndAppionmentDto)
         {
-            var result = await _userService.CreateClaimAndAppionment(patientClaimAndAppionmentDto);
+           
+                var result = await _userService.CreateClaimAndAppionment(patientClaimAndAppionmentDto);
+                return Ok(result);
+                       
+        }
+
+        [HttpPut]
+
+        public async Task<IActionResult> UpdateClaimsAndClaimsLog(UpdateClaimDto dto, int claimId)
+        {
+            var result = await _userService.UpdateClaims(dto, claimId);
             return Ok(result);
         }
 
+        [HttpPut]
+
+        public async Task<IActionResult> UpdateRecentClaims(UpdateClaimDto dto, int claimId)
+        {
+            var result = await _userService.UpdateRecentClaims(dto, claimId);
+            return Ok(result);
+        }
     }
 }

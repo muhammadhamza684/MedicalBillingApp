@@ -10,11 +10,13 @@ namespace MedicalBillingApp.Dto_s
         public string Username { get; set; } = null!;
 
         [StringLength(500)]
-        public string PasswordHash { get; set; } = null!;
+        public string PasswordHash { get; set; } = string.Empty;
 
         [StringLength(150)]
         public string? Email { get; set; }
 
         public bool? IsActive { get; set; }
+
+        public int? RoleId { get; set; }
     }
 }

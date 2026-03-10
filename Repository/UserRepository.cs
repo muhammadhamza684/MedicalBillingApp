@@ -3,8 +3,11 @@ using MedicalBillingApp.Dto_s;
 using MedicalBillingApp.HelperMethod;
 using MedicalBillingApp.Models;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 using System.Security.Cryptography.Xml;
+using Claim = MedicalBillingApp.Models.Claim;
 
 namespace MedicalBillingApp.Repository
 {
@@ -12,13 +15,18 @@ namespace MedicalBillingApp.Repository
     {
         Task<UserRegistrationDtos> UserRegistration(UserRegistrationDtos userDto);
 
-        Task<bool> loginUser(UserLoginDto userDto);
+        Task<User> loginUser(UserLoginDto userDto);
 
         Task<ClaimCompositionDto> InsertClaims(ClaimCompositionDto claimCompositionDto);
 
-        Task<bool> UpdateClaim(ClaimCompositionDto claimCompositionDto);
+        Task<string> UpdateClaim(ClaimCompositionDto claimCompositionDto);
 
         Task<PatientClaimAndAppionmentDto> CreateClaimAndAppionment(PatientClaimAndAppionmentDto patientClaimAndAppionmentDto);
+
+        Task<UpdateClaimDto> UpdateClaims(UpdateClaimDto dto, int claimId);
+
+        Task<ClaimUpdateDto> UpdateRecentClaims(UpdateClaimDto dto, int claimId);
+
 
     }
     public class UserRepository : IUserRepository
@@ -35,38 +43,51 @@ namespace MedicalBillingApp.Repository
 
         public async Task<UserRegistrationDtos> UserRegistration(UserRegistrationDtos userDtoS)
         {
-            var user = new User();
-            user.Username = userDtoS.Username;
-            user.Email = userDtoS.Email;
 
-            // Hash the password
-            user.PasswordHash = _passwordHelper.HashPassword(user, userDtoS.PasswordHash);
+            try
+            {
+                var user = new User();
+                user.Username = userDtoS.Username;
+                user.Email = userDtoS.Email;
+                user.PasswordHash = userDtoS.PasswordHash;
+                user.RoleId = userDtoS.RoleId;
+                user.IsActive = true;
 
-            // Save to DB
-            _context.Users.Add(user);
-            await _context.SaveChangesAsync();
+                // Hash the password
+                // user.PasswordHash = _passwordHelper.HashPassword(user, userDtoS.PasswordHash);
 
-            // Clear password before returning
-            userDtoS.PasswordHash = null;
-            return userDtoS;
+                // Save to DB
+                _context.Users.Add(user);
+                await _context.SaveChangesAsync();
+
+                // Clear password before returning
+                // userDtoS.PasswordHash = null;
+                return userDtoS;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+           
         }
 
-        public async Task<bool> loginUser(UserLoginDto userDto)
+        public async Task<User> loginUser(UserLoginDto userDto)
         {
-            // 1️⃣ Find user by email first
             var userResult = await _context.Users
-                .FirstOrDefaultAsync(x => x.Email == userDto.Email);
+                 .FirstOrDefaultAsync(x => x.Email == userDto.Email);
 
-            // 2️⃣ Agar user nahi mila to false return karo
             if (userResult == null)
-                return false;
+                return null;
 
-            // 3️⃣ Password verify karo using PasswordHelper
-            bool isPasswordValid = _passwordHelper.VerifyPassword(userResult, userResult.PasswordHash, userDto.Password);
+            // bool isPasswordValid = _passwordHelper.VerifyPassword(userResult, userResult.PasswordHash, userDto.Password);
 
-            return isPasswordValid;
+            //if (!isPasswordValid)
+            //    return null;
+
+
+            return userResult;
         }
-
         public async Task<ClaimCompositionDto> InsertClaims(ClaimCompositionDto dto)
         {
             // 1️⃣ Insert Patient (single)
@@ -87,7 +108,7 @@ namespace MedicalBillingApp.Repository
             await _context.SaveChangesAsync();   // 👈 PatientId generate hoga
 
             // 2️⃣ Insert Claims (multiple possible)
-            var claims = dto.cliamDtos.Select(x => new Claim
+            var claims = dto.cliamDtos.Select(x => new Models.Claim
             {
                 PatientId = patient.PatientId,   // 🔑 FK
                // UserId = patient.UserId,          // 🔑 FK
@@ -114,17 +135,17 @@ namespace MedicalBillingApp.Repository
             if (patient == null)
                 throw new Exception("Patient not found");
 
-            // Update fields
+       
             patient.FirstName = patientDto.FirstName;
             patient.LastName = patientDto.LastName;
             patient.Phone = patientDto.Phone;
             patient.Gender = patientDto.Gender;
             patient.DateOfBirth = patientDto.DateOfBirth;
 
-            // Mark patient as modified
+           
             _context.Entry(patient).State = EntityState.Modified;
 
-            // 2️⃣ Claims update
+
             foreach (var claimDto in claimCompositionDto.cliamDtos)
             {
                 var claim = await _context.Claims
@@ -136,13 +157,10 @@ namespace MedicalBillingApp.Repository
                     claim.ClaimStatus = claimDto.ClaimStatus;
                     claim.TotalAmount = claimDto.TotalAmount;
                     claim.CreatedDate = claimDto.CreatedDate;
-
-                    // Mark claim as modified
                     _context.Entry(claim).State = EntityState.Modified;
                 }
             }
 
-            // 3️⃣ Save all changes
             await _context.SaveChangesAsync();
 
             return true;
@@ -155,9 +173,6 @@ namespace MedicalBillingApp.Repository
 
             try
             {
-                // ======================
-                // 1️⃣ PATIENT
-                // ======================
                 var patientDto = dto.PatientDtos.First();
 
                 var patient = new Patient
@@ -172,10 +187,6 @@ namespace MedicalBillingApp.Repository
                 _context.Patients.Add(patient);
                 await _context.SaveChangesAsync();
 
-
-                // ======================
-                // 2️⃣ DOCTOR
-                // ======================
                 var doctorDto = dto.DoctorDtos.First();
 
                 var doctor = await _context.Doctors
@@ -194,10 +205,6 @@ namespace MedicalBillingApp.Repository
                     await _context.SaveChangesAsync();
                 }
 
-
-                // ======================
-                // 3️⃣ APPOINTMENT
-                // ======================
                 var appointmentDto = dto.appointments.First();
 
                 var appointment = new Appointment
@@ -213,13 +220,10 @@ namespace MedicalBillingApp.Repository
                 _context.Appointments.Add(appointment);
                 await _context.SaveChangesAsync();
 
-
-                // ======================
-                // 4️⃣ CLAIMS (MULTIPLE)
-                // ======================
                 var claims = dto.claims.Select(x => new Claim
                 {
-                    ClaimNumber = Guid.NewGuid().ToString(), // ✅ UNIQUE
+                    // ClaimId will be auto-generated, remove any manual assignment
+                    ClaimNumber = Guid.NewGuid().ToString().Substring(0, 5), // ✅ UNIQUE
                     ClaimStatus = x.ClaimStatus,
                     TotalAmount = x.TotalAmount,
                     CreatedDate = DateTime.Now,
@@ -230,10 +234,88 @@ namespace MedicalBillingApp.Repository
                 _context.Claims.AddRange(claims);
                 await _context.SaveChangesAsync();
 
+                // Using foreach to create claim logs
+                var claimLogs = new List<ClaimLog>();
+                int index = 0;
+                foreach (var logDto in dto.claimLogDtos)
+                {
+                    var relatedClaim = claims[index]; // Link log to the corresponding claim
+                    claimLogs.Add(new ClaimLog
+                    {
+                        ClaimId = relatedClaim.ClaimId,
+                        LogMessage = logDto.LogMessage,
+                        OldStatus = logDto.OldStatus,
+                        NewStatus = logDto.NewStatus,
+                        LoggedDate = DateTime.Now
+                    });
+                    index++;
+                }
 
-                // ======================
-                // ✅ COMMIT
-                // ======================
+                _context.ClaimLogs.AddRange(claimLogs);
+                await _context.SaveChangesAsync();
+
+                await transaction.CommitAsync();
+
+                // Update DTO with generated IDs
+                dto.PatientDtos.First().PatientId = patient.PatientId;
+                dto.DoctorDtos.First().DoctorId = doctor.DoctorId;
+                dto.appointments.First().AppointmentId = appointment.AppointmentId;
+                dto.appointments.First().PatientId = patient.PatientId;
+                dto.appointments.First().DoctorId = doctor.DoctorId;
+
+                index = 0;
+                foreach (var claim in claims)
+                {
+                    var dtoClaim = dto.claims[index];
+                    dtoClaim.ClaimId = claim.ClaimId;
+                    dtoClaim.PatientId = patient.PatientId;
+                    dtoClaim.AppointmentId = appointment.AppointmentId;
+                    dtoClaim.ClaimNumber = claim.ClaimNumber;
+                    index++;
+                }
+
+                return dto;
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
+        }
+
+        public async Task<UpdateClaimDto> UpdateClaims(UpdateClaimDto dto, int claimId)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+
+            try
+            {
+                var claim = await _context.Claims
+                    .FirstOrDefaultAsync(x => x.ClaimId == claimId);
+
+                if (claim == null)
+                    throw new Exception("Claim not found");
+
+                var dtoClaim = dto.claims.FirstOrDefault();
+
+                var oldStatus = claim.ClaimStatus;
+
+                claim.ClaimStatus = dtoClaim.ClaimStatus;
+
+                var dtoLog = dto.claimLogDtos.FirstOrDefault();
+
+                var claimLog = new ClaimLog
+                {
+                    ClaimId = claim.ClaimId,
+                    LogMessage = dtoLog.LogMessage,
+                    OldStatus = oldStatus,
+                    NewStatus = dtoClaim.ClaimStatus,
+                    LoggedDate = DateTime.Now
+                };
+
+                _context.ClaimLogs.Add(claimLog);
+
+                await _context.SaveChangesAsync();
+
                 await transaction.CommitAsync();
 
                 return dto;
@@ -244,5 +326,67 @@ namespace MedicalBillingApp.Repository
                 throw;
             }
         }
+
+        Task<string> IUserRepository.UpdateClaim(ClaimCompositionDto claimCompositionDto)
+        {
+            throw new NotImplementedException();
+        }
+
+        public async Task<ClaimUpdateDto> UpdateRecentClaims(UpdateClaimDto dto, int claimId)
+        {
+            var existingClaim = await _context.Claims
+                .FirstOrDefaultAsync(x => x.ClaimId == claimId);
+
+            if (existingClaim == null)
+                return null;
+
+            var updatedClaimDto = dto.claims.FirstOrDefault();
+            if (updatedClaimDto != null)
+            {
+                existingClaim.ClaimStatus = updatedClaimDto.ClaimStatus;
+              
+            }
+
+            var newLogs = new List<ClaimLog>();
+            if (dto.claimLogDtos != null)
+            {
+                foreach (var logDto in dto.claimLogDtos)
+                {
+                    var claimLog = new ClaimLog
+                    {
+                        ClaimId = claimId,
+                        LogMessage = logDto.LogMessage,
+                        OldStatus = logDto.OldStatus,
+                        NewStatus = logDto.NewStatus,
+                        LoggedDate = logDto.LoggedDate
+                    };
+                    _context.ClaimLogs.Add(claimLog);
+                    newLogs.Add(claimLog);
+                }
+            }
+
+            await _context.SaveChangesAsync();
+
+            var updatedClaimUpdateDto = new ClaimUpdateDto
+            {
+                claimDtos = new ClaimDto
+                {
+                    ClaimId = existingClaim.ClaimId,
+                    ClaimStatus = existingClaim.ClaimStatus
+                },
+                claimLogDtos = newLogs.Select(log => new ClaimLogDto
+                {
+                    ClaimLogId = log.ClaimLogId,
+                    ClaimId = log.ClaimId,
+                    LogMessage = log.LogMessage,
+                    OldStatus = log.OldStatus,
+                    NewStatus = log.NewStatus,
+                    LoggedDate = log.LoggedDate
+                }).ToList()
+            };
+
+            return updatedClaimUpdateDto;
+        }
     }
 }
+
