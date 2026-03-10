@@ -34,22 +34,12 @@ namespace MedicalBillingApp.Services
         public async Task<UserRegistrationDtos> userRegistration(UserRegistrationDtos userDtoS)
         {
             var result = await _userRepository.UserRegistration(userDtoS);
+
+  
             return result;
         }
 
-        //public async Task<User> LoginUser(UserLoginDto userDto)
-        //{
-        //    // 1️⃣ Repository se user get karo
-        //    var user = await _userRepository.loginUser(userDto);
-
-        //    if (user == null)
-        //        return null;  // ya throw exception
-
-        //    // 2️⃣ JWT generate karo
-        //    var token = _authService.GenerateJwtToken(user);
-
-        //    return token;
-        //}
+      
 
         public async Task<ClaimCompositionDto> InsertClaims(ClaimCompositionDto claimCompositionDto)
         {

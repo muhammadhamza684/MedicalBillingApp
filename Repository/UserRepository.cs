@@ -41,43 +41,51 @@ namespace MedicalBillingApp.Repository
 
         public async Task<UserRegistrationDtos> UserRegistration(UserRegistrationDtos userDtoS)
         {
-            var user = new User();
-            user.Username = userDtoS.Username;
-            user.Email = userDtoS.Email;
-            user.PasswordHash = userDtoS.PasswordHash;
 
-            // Hash the password
-           // user.PasswordHash = _passwordHelper.HashPassword(user, userDtoS.PasswordHash);
+            try
+            {
+                var user = new User();
+                user.Username = userDtoS.Username;
+                user.Email = userDtoS.Email;
+                user.PasswordHash = userDtoS.PasswordHash;
+                user.RoleId = userDtoS.RoleId;
+                user.IsActive = true;
 
-            // Save to DB
-            _context.Users.Add(user);
-            await _context.SaveChangesAsync();
+                // Hash the password
+                // user.PasswordHash = _passwordHelper.HashPassword(user, userDtoS.PasswordHash);
 
-            // Clear password before returning
-           // userDtoS.PasswordHash = null;
-            return userDtoS;
+                // Save to DB
+                _context.Users.Add(user);
+                await _context.SaveChangesAsync();
+
+                // Clear password before returning
+                // userDtoS.PasswordHash = null;
+                return userDtoS;
+            }
+            catch (Exception)
+            {
+
+                throw;
+            }
+           
         }
 
-        //public async Task<UserLoginDto> LoginUser(UserLoginDto userDto)
-        //{
-        //    // 1️⃣ Find user by email
-        //    var userResult = await _context.Users
-        //        .FirstOrDefaultAsync(x => x.Email == userDto.Email);
+        public async Task<User> loginUser(UserLoginDto userDto)
+        {
+            var userResult = await _context.Users
+                 .FirstOrDefaultAsync(x => x.Email == userDto.Email);
 
-        //    // 2️⃣ Agar user nahi mila to null return karo
-        //    if (userResult == null)
-        //        return null;
+            if (userResult == null)
+                return null;
 
-        //    // 3️⃣ Password verify karo
-        //    bool isPasswordValid = _passwordHelper.VerifyPassword(userResult, userResult.PasswordHash, userDto.Password);
+            // bool isPasswordValid = _passwordHelper.VerifyPassword(userResult, userResult.PasswordHash, userDto.Password);
 
-        //    if (!isPasswordValid)
-        //        return null;
+            //if (!isPasswordValid)
+            //    return null;
 
-        //    // ✅ User valid hai to user object return karo
-        //    return userResult;
-        //}
 
+            return userResult;
+        }
         public async Task<ClaimCompositionDto> InsertClaims(ClaimCompositionDto dto)
         {
             // 1️⃣ Insert Patient (single)
@@ -327,22 +335,7 @@ namespace MedicalBillingApp.Repository
             throw new NotImplementedException();
         }
 
-        public async Task<User> loginUser(UserLoginDto userDto)
-        {
-            var userResult = await _context.Users
-                 .FirstOrDefaultAsync(x => x.Email == userDto.Email);
-
-            if (userResult == null)
-                return null;
-
-           // bool isPasswordValid = _passwordHelper.VerifyPassword(userResult, userResult.PasswordHash, userDto.Password);
-
-            //if (!isPasswordValid)
-            //    return null;
-
-
-            return userResult;
-        }
+      
     }
 }
 

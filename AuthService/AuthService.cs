@@ -30,18 +30,13 @@ namespace MedicalBillingApp.AuthService
             var audience = jwtSettings.GetValue<string>("Audience");
             var expiryMinutes = jwtSettings.GetValue<int>("ExpiryInMinutes", 60);
 
-            if (string.IsNullOrEmpty(secretKey))
-                throw new Exception("JWT Secret is missing in configuration.");
-
             var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
             var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
 
-            var roleName = user.Role != null ? user.Role.RoleName : "User";
-
             var claims = new List<System.Security.Claims.Claim>
     {
-        new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Name, user.Username),
-        new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.Role, roleName)
+        new System.Security.Claims.Claim(ClaimTypes.Name, user.Username),
+        new System.Security.Claims.Claim(ClaimTypes.Role, user.Role.RoleName)
     };
 
             var token = new JwtSecurityToken(
