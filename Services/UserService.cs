@@ -19,6 +19,8 @@ namespace MedicalBillingApp.Services
         Task<ApiResponce<PatientClaimAndAppionmentDto>> CreateClaimAndAppionment(PatientClaimAndAppionmentDto patientClaimAndAppionmentDto);
 
         Task<ApiResponce<UpdateClaimDto>> UpdateClaims(UpdateClaimDto dto, int claimId);
+
+        Task<ClaimUpdateDto> UpdateRecentClaims(UpdateClaimDto dto, int claimId);
     }
 
     public class UserService : IUserService
@@ -94,6 +96,12 @@ namespace MedicalBillingApp.Services
             var token = _authService.GenerateJwtToken(user);
 
             return token;
+        }
+
+        public async Task<ClaimUpdateDto> UpdateRecentClaims(UpdateClaimDto dto, int claimId)
+        {
+            var result   = await _userRepository.UpdateRecentClaims(dto, claimId);
+            return result;
         }
     }
 }

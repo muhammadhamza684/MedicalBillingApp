@@ -25,6 +25,8 @@ namespace MedicalBillingApp.Repository
 
         Task<UpdateClaimDto> UpdateClaims(UpdateClaimDto dto, int claimId);
 
+        Task<ClaimUpdateDto> UpdateRecentClaims(UpdateClaimDto dto, int claimId);
+
 
     }
     public class UserRepository : IUserRepository
@@ -325,17 +327,66 @@ namespace MedicalBillingApp.Repository
             }
         }
 
-        //public async Task<User> LoginUser(UserLoginDto userDto)
-        //{
-            
-        //}
-
         Task<string> IUserRepository.UpdateClaim(ClaimCompositionDto claimCompositionDto)
         {
             throw new NotImplementedException();
         }
 
-      
+        public async Task<ClaimUpdateDto> UpdateRecentClaims(UpdateClaimDto dto, int claimId)
+        {
+            var existingClaim = await _context.Claims
+                .FirstOrDefaultAsync(x => x.ClaimId == claimId);
+
+            if (existingClaim == null)
+                return null;
+
+            var updatedClaimDto = dto.claims.FirstOrDefault();
+            if (updatedClaimDto != null)
+            {
+                existingClaim.ClaimStatus = updatedClaimDto.ClaimStatus;
+                // add other fields if needed
+            }
+
+            var newLogs = new List<ClaimLog>();
+            if (dto.claimLogDtos != null)
+            {
+                foreach (var logDto in dto.claimLogDtos)
+                {
+                    var claimLog = new ClaimLog
+                    {
+                        ClaimId = claimId,
+                        LogMessage = logDto.LogMessage,
+                        OldStatus = logDto.OldStatus,
+                        NewStatus = logDto.NewStatus,
+                        LoggedDate = logDto.LoggedDate
+                    };
+                    _context.ClaimLogs.Add(claimLog);
+                    newLogs.Add(claimLog);
+                }
+            }
+
+            await _context.SaveChangesAsync();
+
+            var updatedClaimUpdateDto = new ClaimUpdateDto
+            {
+                claimDtos = new ClaimDto
+                {
+                    ClaimId = existingClaim.ClaimId,
+                    ClaimStatus = existingClaim.ClaimStatus
+                },
+                claimLogDtos = newLogs.Select(log => new ClaimLogDto
+                {
+                    ClaimLogId = log.ClaimLogId,
+                    ClaimId = log.ClaimId,
+                    LogMessage = log.LogMessage,
+                    OldStatus = log.OldStatus,
+                    NewStatus = log.NewStatus,
+                    LoggedDate = log.LoggedDate
+                }).ToList()
+            };
+
+            return updatedClaimUpdateDto;
+        }
     }
 }
 

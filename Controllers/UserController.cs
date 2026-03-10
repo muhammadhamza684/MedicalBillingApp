@@ -65,5 +65,13 @@ namespace MedicalBillingApp.Controllers
             var result = await _userService.UpdateClaims(dto, claimId);
             return Ok(result);
         }
+
+        [HttpPut]
+
+        public async Task<IActionResult> UpdateRecentClaims(UpdateClaimDto dto, int claimId)
+        {
+            var result = await _userService.UpdateRecentClaims(dto, claimId);
+            return Ok(result);
+        }
     }
 }
