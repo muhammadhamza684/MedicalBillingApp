@@ -344,7 +344,7 @@ namespace MedicalBillingApp.Repository
             if (updatedClaimDto != null)
             {
                 existingClaim.ClaimStatus = updatedClaimDto.ClaimStatus;
-                // add other fields if needed
+              
             }
 
             var newLogs = new List<ClaimLog>();

@@ -1,5 +1,7 @@
 using MedicalBillingApp.AuthService;
 using MedicalBillingApp.DAL;
+using MedicalBillingApp.DashBoradSummary.Repository;
+using MedicalBillingApp.DashBoradSummary.Service;
 using MedicalBillingApp.HelperMethod;
 using MedicalBillingApp.Models;
 using MedicalBillingApp.Repository;
@@ -50,6 +52,10 @@ builder.Services.AddScoped<IAuthService, AuthService>();
 // Password hashing (optional, can remove if you want plain passwords)
 builder.Services.AddScoped<IPasswordHelper, PasswordHelper>();
 builder.Services.AddScoped<IPasswordHasher<User>, PasswordHasher<User>>();
+
+//Dashboard Services Registration
+builder.Services.AddScoped<IDashBoradRepository, DashBoradRepository>();
+builder.Services.AddScoped<IDashboardServices, DashboardServices>();
 
 // ------------------------
 // JWT Authentication
