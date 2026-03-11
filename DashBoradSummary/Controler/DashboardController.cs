@@ -20,5 +20,12 @@ namespace MedicalBillingApp.DashBoradSummary.Controler
             var result = await _services.GetDashBoardData();
             return Ok(result);
         }
+
+        [HttpGet]
+        public async Task<IActionResult> GetClaimStatusInformation()
+        {
+            var result = await _services.GetClaimStatusInformation();
+            return Ok(result);
+        }
     }
 }

@@ -13,7 +13,9 @@ namespace MedicalBillingApp.DashBoradSummary.Service
         Task<DashBoardClass> GetDashBoardData();
 
         Task<List<Claim>> GetAllClaims();
-}
+
+        Task<List<ClaimsByStatusDto>> GetClaimStatusInformation();
+    }
 public class DashboardServices : IDashboardServices
     {
         private readonly IDashBoradRepository _repository;
@@ -29,6 +31,20 @@ public class DashboardServices : IDashboardServices
             return result;
 
             
+        }
+
+        public async Task<List<ClaimsByStatusDto>> GetClaimStatusInformation()
+        {
+             var result= await _repository.GetClaimStatusInformation();
+
+            var groupResult = result.GroupBy(x => x.ClaimStatus)
+                .Select(g => new ClaimsByStatusDto
+                {
+                    ClaimStatus = g.Key,
+                    Count = g.Count(),
+                }).ToList();
+
+            return groupResult;
         }
 
         public async Task<DashBoardClass> GetDashBoardData()

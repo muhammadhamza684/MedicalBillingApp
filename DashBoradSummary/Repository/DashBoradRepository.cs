@@ -1,4 +1,5 @@
 ﻿using MedicalBillingApp.DAL;
+using MedicalBillingApp.DashBoradSummary.Dto_s;
 using MedicalBillingApp.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,6 +14,8 @@ namespace MedicalBillingApp.DashBoradSummary.Repository
         Task<List<Claim>> GetAllPendingClaims();
 
         Task<List<Claim>> GetAllApprovedClaims();
+
+        Task<List<ClaimsByStatusDto>> GetClaimStatusInformation();
     }
     public class DashBoradRepository : IDashBoradRepository
     {
@@ -49,6 +52,13 @@ namespace MedicalBillingApp.DashBoradSummary.Repository
         public async Task<List<Claim>> GetAllApprovedClaims()
         {
             var result = await _context.Claims.Where(x => x.ClaimStatus == ApprovedStatus).ToListAsync();
+
+            return result;
+        }
+
+        public async Task<List<ClaimsByStatusDto>> GetClaimStatusInformation()
+        {
+            var result = await _context.Set<ClaimsByStatusDto>().FromSqlInterpolated($"Exec sp_claimStatusCount").ToListAsync();
 
             return result;
         }
